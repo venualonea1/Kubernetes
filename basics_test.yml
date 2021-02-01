@@ -1,0 +1,60 @@
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: venu-name-space
+apiVersion: v1
+---
+kind: Secret
+metadata:
+  name: dockercred
+  namespace: venu-name-space
+data:
+   .dockerconfigjson: ewogICAgImF1dGhzIjp7CiAgICAgICAgImh0dHBzOi8vaW5kZXguZG9ja2VyLmlvL3YxLyI6ewogICAgICAgICAgICAiYXV0aCI6ImRtVnVkV0pvWVhKaFpIZGhhanBUYm1Wb1lVQXhNak09IgogICAgICAgIH0KCiAgICB9Cgp9
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: venu-nginx
+  namespace: venu-name-space
+spec:
+  selector:
+    matchLabels:
+      app: venu-nginx-cont
+  template:
+    metadata:
+      labels:
+        app: venu-nginx-cont
+    spec:
+      containers:
+      - name: myapp
+        image: docker.io/nginx:1.19.6
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+          requests:
+            memory: "128Mi"
+            cpu: "200m"
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always
+      imagePullSecrets:
+        - name: dockercred  
+  replicas: 1
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name:  venu-svc
+  namespace: venu-name-space
+spec:
+  selector:
+    app:  venu-nginx-cont
+  type: NodePort
+  ports:
+  - name: http
+    port:  80
+    targetPort:  80
